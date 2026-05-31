@@ -1,0 +1,14 @@
+node_modules/
+out/
+release/
+dist/
+build/
+coverage/
+.vite/
+.grok-command-center-logs/
+.qwen-workshop-logs/
+.DS_Store
+*.log
+*.local
+.env
+.env.*

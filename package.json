@@ -1,0 +1,105 @@
+{
+  "name": "grok-command-center",
+  "productName": "Grok Command Center",
+  "version": "0.1.0",
+  "description": "A Grok-native desktop agent command center.",
+  "main": "./out/main/index.js",
+  "author": "Grok Command Center",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "dev:renderer": "vite --config vite.renderer.config.ts --host 127.0.0.1",
+    "build": "npm run typecheck && electron-vite build",
+    "preview": "electron-vite preview",
+    "pack": "npm run build && electron-builder --dir --publish never",
+    "dist": "npm run build && electron-builder --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never",
+    "icons:win": "powershell -ExecutionPolicy Bypass -File scripts/generate-windows-icon.ps1",
+    "smoke:desktop": "node scripts/smoke-electron.mjs",
+    "smoke:layout": "node scripts/smoke-electron.mjs --layout",
+    "smoke:packaged": "node scripts/smoke-packaged.mjs",
+    "smoke:grok": "npm run build && node scripts/smoke-real-grok.mjs",
+    "smoke:grok:packaged": "node scripts/smoke-real-grok.mjs --packaged",
+    "check:release": "npm run typecheck && npm test && npm run build && npm run smoke:desktop && npm run smoke:layout",
+    "check:package": "npm run typecheck && npm test && npm run pack && npm run smoke:packaged",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "build": {
+    "appId": "com.geminiz1978.grokcommandcenter",
+    "productName": "Grok Command Center",
+    "afterPack": "scripts/stamp-windows-icon.cjs",
+    "copyright": "Copyright (c) 2026 Grok Command Center",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "out/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/grok-command-center-icon.png",
+        "to": "grok-command-center-icon.png"
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/@qwen-code/sdk/dist/cli/**/*"
+    ],
+    "npmRebuild": false,
+    "win": {
+      "icon": "resources/grok-command-center-icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "Grok-Command-Center-${version}-${arch}-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Grok Command Center"
+    },
+    "portable": {
+      "artifactName": "Grok-Command-Center-${version}-${arch}-Portable.${ext}"
+    }
+  },
+  "dependencies": {
+    "@qwen-code/sdk": "^0.1.7",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  }
+}
