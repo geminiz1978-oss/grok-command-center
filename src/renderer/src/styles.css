@@ -2534,6 +2534,11 @@ button {
   color: var(--text);
 }
 
+.imagine-event.processing {
+  border-color: rgba(255, 209, 122, 0.42);
+  color: var(--amber-hot);
+}
+
 .imagine-event.error {
   border-color: var(--red);
   background: var(--red-soft);
@@ -2554,6 +2559,77 @@ button {
 
 .imagine-gallery {
   min-height: 0;
+}
+
+.imagine-stitcher {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(228, 168, 79, 0.035);
+}
+
+.imagine-stitch-list {
+  display: grid;
+  gap: 6px;
+  padding: 0 14px;
+}
+
+.imagine-stitch-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 28px 28px 28px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--dark);
+  padding: 6px;
+}
+
+.imagine-stitch-row > span {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  color: var(--red);
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.imagine-stitch-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imagine-stitch-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.imagine-stitch-options label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.imagine-stitch-options label > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.imagine-stitch-options input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--near-black);
+  color: var(--text);
+  padding: 7px 8px;
 }
 
 .imagine-gallery-grid {

@@ -100,6 +100,9 @@ const mockWorkshop: WorkshopApi = {
   generateImagineAsset: async () => {
     throw new Error('Grok Command Center desktop bridge is not available in browser preview.');
   },
+  stitchImagineVideos: async () => {
+    throw new Error('Grok Command Center desktop bridge is not available in browser preview.');
+  },
   listImagineAssets: async () => [],
   openImagineAssetExternal: async () => undefined,
   onImagineEvent: () => () => undefined,

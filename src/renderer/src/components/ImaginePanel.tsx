@@ -1,4 +1,6 @@
 import {
+  ArrowDown,
+  ArrowUp,
   Clock,
   Copy,
   ExternalLink,
@@ -8,7 +10,10 @@ import {
   Image,
   Loader2,
   Maximize2,
+  Minus,
+  Plus,
   RefreshCw,
+  Scissors,
   Sparkles,
   Trash2,
   Video,
@@ -21,6 +26,7 @@ import type {
   ImagineGenerateRequest,
   ImagineMode,
   ImagineRunEvent,
+  ImagineStitchRequest,
   SecretStatus,
   WorkspaceInfo
 } from '@shared/types';
@@ -31,7 +37,9 @@ interface ImaginePanelProps {
   assets: ImagineAsset[];
   events: ImagineRunEvent[];
   isGenerating: boolean;
+  isStitching: boolean;
   onGenerate: (request: ImagineGenerateRequest) => Promise<void>;
+  onStitch: (request: ImagineStitchRequest) => Promise<void>;
   onRefresh: () => Promise<void>;
   onOpenAsset: (assetPath: string) => Promise<void>;
 }
@@ -88,7 +96,9 @@ export function ImaginePanel({
   assets,
   events,
   isGenerating,
+  isStitching,
   onGenerate,
+  onStitch,
   onRefresh,
   onOpenAsset
 }: ImaginePanelProps): JSX.Element {
@@ -105,6 +115,9 @@ export function ImaginePanel({
   const [sourcePaths, setSourcePaths] = useState<string[]>([]);
   const [copiedPath, setCopiedPath] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<ImagineAsset | null>(null);
+  const [stitchAssetIds, setStitchAssetIds] = useState<string[]>([]);
+  const [stitchOutputFolder, setStitchOutputFolder] = useState('assets/imagine');
+  const [stitchFilenamePrefix, setStitchFilenamePrefix] = useState('grok-stitch');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const selectedMode = MODE_OPTIONS.find((option) => option.id === mode) ?? MODE_OPTIONS[0];
   const latestEvent = events[0];
@@ -113,11 +126,16 @@ export function ImaginePanel({
     images: assets.filter((asset) => asset.kind === 'image'),
     videos: assets.filter((asset) => asset.kind === 'video')
   }), [assets]);
+  const stitchQueue = useMemo(() => stitchAssetIds
+    .map((assetId) => assets.find((asset) => asset.id === assetId && asset.kind === 'video'))
+    .filter((asset): asset is ImagineAsset => Boolean(asset)), [assets, stitchAssetIds]);
+  const canStitch = Boolean(workspace) && stitchQueue.length >= 2 && !isGenerating && !isStitching;
 
   useEffect(() => {
     if (selectedAsset && !assets.some((asset) => asset.id === selectedAsset.id)) {
       setSelectedAsset(null);
     }
+    setStitchAssetIds((current) => current.filter((assetId) => assets.some((asset) => asset.id === assetId && asset.kind === 'video')));
   }, [assets, selectedAsset]);
 
   useEffect(() => {
@@ -195,6 +213,45 @@ export function ImaginePanel({
 
   function stopModalEvent(event: MouseEvent<HTMLElement>): void {
     event.stopPropagation();
+  }
+
+  function toggleStitchAsset(asset: ImagineAsset): void {
+    setStitchAssetIds((current) => {
+      if (current.includes(asset.id)) {
+        return current.filter((assetId) => assetId !== asset.id);
+      }
+
+      return [...current, asset.id];
+    });
+  }
+
+  function moveStitchAsset(assetId: string, direction: -1 | 1): void {
+    setStitchAssetIds((current) => {
+      const index = current.indexOf(assetId);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+      return next;
+    });
+  }
+
+  async function stitchVideos(): Promise<void> {
+    if (!workspace || !canStitch) {
+      return;
+    }
+
+    await onStitch({
+      runId: crypto.randomUUID(),
+      workspacePath: workspace.path,
+      videoPaths: stitchQueue.map((asset) => asset.path),
+      outputFolder: stitchOutputFolder.trim() || 'assets/imagine',
+      filenamePrefix: stitchFilenamePrefix.trim() || 'grok-stitch'
+    });
+    setStitchAssetIds([]);
   }
 
   return (
@@ -373,6 +430,51 @@ export function ImaginePanel({
         </section>
       ) : null}
 
+      <section className="imagine-stitcher">
+        <div className="subsection-title compact">
+          <span>
+            <Scissors size={14} />
+            Video stitcher
+          </span>
+          <span>{stitchQueue.length}</span>
+        </div>
+        {stitchQueue.length ? (
+          <div className="imagine-stitch-list">
+            {stitchQueue.map((asset, index) => (
+              <div className="imagine-stitch-row" key={asset.id}>
+                <span>{index + 1}</span>
+                <strong title={asset.name}>{asset.name}</strong>
+                <button className="icon-button" title="Move earlier" disabled={index === 0 || isStitching} onClick={() => moveStitchAsset(asset.id, -1)} type="button">
+                  <ArrowUp size={13} />
+                </button>
+                <button className="icon-button" title="Move later" disabled={index === stitchQueue.length - 1 || isStitching} onClick={() => moveStitchAsset(asset.id, 1)} type="button">
+                  <ArrowDown size={13} />
+                </button>
+                <button className="icon-button danger" title="Remove from stitch queue" disabled={isStitching} onClick={() => toggleStitchAsset(asset)} type="button">
+                  <Minus size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="empty-copy">Use the Queue buttons on video gallery items to build a longer MP4.</p>
+        )}
+        <div className="imagine-stitch-options">
+          <label>
+            <span>Folder</span>
+            <input value={stitchOutputFolder} disabled={isStitching} onChange={(event) => setStitchOutputFolder(event.target.value)} />
+          </label>
+          <label>
+            <span>Name prefix</span>
+            <input value={stitchFilenamePrefix} disabled={isStitching} onChange={(event) => setStitchFilenamePrefix(event.target.value)} />
+          </label>
+          <button className="primary-action" disabled={!canStitch} onClick={() => void stitchVideos()} type="button">
+            {isStitching ? <Loader2 className="spin-icon" size={15} /> : <Scissors size={15} />}
+            Export MP4
+          </button>
+        </div>
+      </section>
+
       <section className="imagine-gallery">
         <div className="subsection-title compact">
           <span>
@@ -408,6 +510,12 @@ export function ImaginePanel({
                     <ExternalLink size={12} />
                     <span>Open</span>
                   </button>
+                  {asset.kind === 'video' ? (
+                    <button className="bubble-copy" title="Add video to stitch queue" onClick={() => toggleStitchAsset(asset)} type="button">
+                      {stitchAssetIds.includes(asset.id) ? <Minus size={12} /> : <Plus size={12} />}
+                      <span>{stitchAssetIds.includes(asset.id) ? 'Queued' : 'Queue'}</span>
+                    </button>
+                  ) : null}
                 </div>
               </article>
             ))}

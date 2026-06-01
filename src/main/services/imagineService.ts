@@ -1,12 +1,16 @@
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
+import ffmpegStaticPath from 'ffmpeg-static';
 import type { SettingsStore } from './settingsStore';
 import type {
   ImagineAsset,
   ImagineGenerateRequest,
   ImagineGenerateResult,
   ImagineMode,
-  ImagineRunEvent
+  ImagineRunEvent,
+  ImagineStitchRequest
 } from '../../shared/types';
 
 const XAI_BASE_URL = 'https://api.x.ai/v1';
@@ -23,6 +27,16 @@ const IMAGE_MIME_TYPES: Record<string, string> = {
 };
 
 type EmitImagineEvent = (event: ImagineRunEvent) => void;
+
+interface FfmpegResult {
+  ok: boolean;
+  stderr: string;
+}
+
+interface ImagineServiceOptions {
+  ffmpegPath?: string | null;
+  runFfmpeg?: (args: string[]) => Promise<FfmpegResult>;
+}
 
 interface XaiImageResponse {
   data?: Array<{
@@ -66,7 +80,17 @@ interface XaiSourceMedia {
 }
 
 export class ImagineService {
-  constructor(private readonly settingsStore: SettingsStore) {}
+  private readonly ffmpegPath: string | null;
+
+  private readonly runFfmpeg: (args: string[]) => Promise<FfmpegResult>;
+
+  constructor(
+    private readonly settingsStore: SettingsStore,
+    options: ImagineServiceOptions = {}
+  ) {
+    this.ffmpegPath = normalizeFfmpegPath(options.ffmpegPath ?? ffmpegStaticPath);
+    this.runFfmpeg = options.runFfmpeg ?? ((args) => runFfmpegCommand(this.ffmpegPath, args));
+  }
 
   async generate(request: ImagineGenerateRequest, emit: EmitImagineEvent): Promise<ImagineGenerateResult> {
     const apiKey = await this.settingsStore.getApiKey('xai');
@@ -101,6 +125,103 @@ export class ImagineService {
     return gallery
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
       .slice(0, Math.max(1, Math.min(limit, 200)));
+  }
+
+  async stitch(request: ImagineStitchRequest, emit: EmitImagineEvent): Promise<ImagineGenerateResult> {
+    validateStitchRequest(request);
+    const workspacePath = resolve(request.workspacePath);
+    const outputDirectory = resolveWorkspacePath(workspacePath, request.outputFolder || 'assets/imagine');
+    const videoPaths = request.videoPaths.map((videoPath) => resolveWorkspacePath(workspacePath, videoPath));
+
+    emitImagine(emit, request.runId, 'submitted', `Preparing ${videoPaths.length} clips for stitching.`);
+    await Promise.all(videoPaths.map(validateVideoPath));
+    await mkdir(outputDirectory, { recursive: true });
+
+    const outputPath = join(outputDirectory, `${formatAssetBaseName(request.filenamePrefix || 'grok-stitch', 0, 1)}.mp4`);
+    const tempDirectory = join(tmpdir(), `grok-command-center-stitch-${request.runId}`);
+    await mkdir(tempDirectory, { recursive: true });
+    const listPath = join(tempDirectory, 'clips.txt');
+    await writeFile(listPath, `${videoPaths.map(toConcatFileLine).join('\n')}\n`, 'utf8');
+
+    try {
+      emitImagine(emit, request.runId, 'processing', 'Stitching clips without re-encoding.');
+      const copyResult = await this.runFfmpeg([
+        '-hide_banner',
+        '-y',
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        listPath,
+        '-c',
+        'copy',
+        '-movflags',
+        '+faststart',
+        outputPath
+      ]);
+
+      if (!copyResult.ok) {
+        emitImagine(emit, request.runId, 'processing', 'Normalizing clips and stitching with re-encode fallback.');
+        const encodeResult = await this.runFfmpeg([
+          '-hide_banner',
+          '-y',
+          '-f',
+          'concat',
+          '-safe',
+          '0',
+          '-i',
+          listPath,
+          '-c:v',
+          'libx264',
+          '-preset',
+          'veryfast',
+          '-crf',
+          '20',
+          '-c:a',
+          'aac',
+          '-movflags',
+          '+faststart',
+          outputPath
+        ]);
+
+        if (!encodeResult.ok) {
+          throw new Error(`Could not stitch videos: ${summarizeFfmpegError(encodeResult.stderr || copyResult.stderr)}`);
+        }
+      }
+
+      const asset = await createAssetRecord(
+        {
+          runId: request.runId,
+          workspacePath: request.workspacePath,
+          mode: 'video-stitch',
+          prompt: `Stitched video from ${videoPaths.length} clips`,
+          outputFolder: request.outputFolder,
+          filenamePrefix: request.filenamePrefix,
+          sourcePaths: videoPaths,
+          imageCount: 1,
+          imageAspectRatio: '1:1',
+          imageResolution: '1k',
+          videoAspectRatio: '16:9',
+          videoDuration: 6,
+          videoResolution: '720p'
+        },
+        outputPath,
+        'video',
+        'video/mp4',
+        'local-ffmpeg',
+        videoPaths
+      );
+      await this.addAssetsToGallery(workspacePath, [asset]);
+      emitImagine(emit, request.runId, 'saved', `Saved stitched video: ${asset.name}.`);
+
+      return {
+        runId: request.runId,
+        assets: [asset]
+      };
+    } finally {
+      await rm(dirname(listPath), { recursive: true, force: true });
+    }
   }
 
   private async generateImages(
@@ -413,6 +534,32 @@ function resolveSourcePath(workspacePath: string, value: string): string {
   return isAbsolute(normalized) ? resolve(normalized) : resolve(workspacePath, normalized);
 }
 
+function validateStitchRequest(request: ImagineStitchRequest): void {
+  if (!request.workspacePath.trim()) {
+    throw new Error('Open a workspace before stitching videos.');
+  }
+
+  if (request.videoPaths.length < 2) {
+    throw new Error('Choose at least 2 videos to stitch.');
+  }
+
+  if (request.videoPaths.length > 20) {
+    throw new Error('Stitch at most 20 videos at once.');
+  }
+}
+
+async function validateVideoPath(videoPath: string): Promise<void> {
+  const extension = extname(videoPath).toLowerCase();
+  if (extension !== '.mp4') {
+    throw new Error(`Video stitcher currently expects MP4 clips: ${basename(videoPath)}`);
+  }
+
+  const fileStat = await stat(videoPath);
+  if (!fileStat.isFile()) {
+    throw new Error(`Video clip is not a file: ${basename(videoPath)}`);
+  }
+}
+
 function validateImagineRequest(request: ImagineGenerateRequest): void {
   if (!request.workspacePath.trim()) {
     throw new Error('Open a workspace before using Imagine.');
@@ -457,6 +604,56 @@ function slugify(value: string): string {
 function isImagineAsset(value: unknown): value is ImagineAsset {
   const record = value as Partial<ImagineAsset>;
   return Boolean(record && typeof record.path === 'string' && typeof record.relativePath === 'string' && typeof record.createdAt === 'string');
+}
+
+function toConcatFileLine(filePath: string): string {
+  return `file '${filePath.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`;
+}
+
+function normalizeFfmpegPath(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return value.replace('app.asar', 'app.asar.unpacked');
+}
+
+function runFfmpegCommand(ffmpegPath: string | null, args: string[]): Promise<FfmpegResult> {
+  if (!ffmpegPath) {
+    throw new Error('Bundled FFmpeg is not available. Reinstall Grok Command Center and try again.');
+  }
+
+  return new Promise((resolveFfmpeg) => {
+    const child = spawn(ffmpegPath, args, {
+      windowsHide: true
+    });
+    let stderr = '';
+
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
+    child.on('error', (error) => {
+      resolveFfmpeg({
+        ok: false,
+        stderr: error.message
+      });
+    });
+    child.on('close', (code) => {
+      resolveFfmpeg({
+        ok: code === 0,
+        stderr
+      });
+    });
+  });
+}
+
+function summarizeFfmpegError(stderr: string): string {
+  const lines = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return lines.slice(-4).join(' ') || 'FFmpeg exited without details.';
 }
 
 async function writeJson(filePath: string, value: unknown): Promise<void> {
@@ -509,6 +706,8 @@ function labelForMode(mode: ImagineMode): string {
       return 'image-to-video';
     case 'reference-to-video':
       return 'reference-to-video';
+    case 'video-stitch':
+      return 'video stitch';
   }
 }
 

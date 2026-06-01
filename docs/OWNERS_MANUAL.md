@@ -107,6 +107,7 @@ Grok Command Center is a Grok-native desktop agent workspace. It gives Grok a lo
 - Refs mode uses reference images to guide a video.
 - Generated files are downloaded immediately into `assets/imagine` so temporary provider URLs are not the source of truth.
 - The gallery shows recent generated images and videos with click-to-preview, open-file, and copy-path controls.
+- Use the Video stitcher to queue generated MP4 clips, reorder them, and export one longer MP4 back into the workspace.
 - Source images must be PNG, JPG, JPEG, or WEBP.
 - Video renders can take longer than image jobs; watch the status stream for submitted, polling, downloading, and saved states.
 

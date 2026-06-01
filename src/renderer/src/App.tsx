@@ -13,6 +13,7 @@ import type {
   ImagineAsset,
   ImagineGenerateRequest,
   ImagineRunEvent,
+  ImagineStitchRequest,
   PromptTemplateConfig,
   PreviewEvent,
   PreviewInfo,
@@ -116,6 +117,7 @@ export function App(): JSX.Element {
   const [imagineAssets, setImagineAssets] = useState<ImagineAsset[]>([]);
   const [imagineEvents, setImagineEvents] = useState<ImagineRunEvent[]>([]);
   const [isImagineGenerating, setIsImagineGenerating] = useState(false);
+  const [isImagineStitching, setIsImagineStitching] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isOwnerManualOpen, setIsOwnerManualOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -579,6 +581,7 @@ export function App(): JSX.Element {
     setImagineAssets([]);
     setImagineEvents([]);
     setIsImagineGenerating(false);
+    setIsImagineStitching(false);
     setCommandResult(null);
     setGitDiffFiles([]);
     setWorkspaceMemory(null);
@@ -680,6 +683,7 @@ export function App(): JSX.Element {
     setImagineAssets([]);
     setImagineEvents([]);
     setIsImagineGenerating(false);
+    setIsImagineStitching(false);
     setCommandResult(null);
     setGitDiffFiles([]);
     setWorkspaceMemory(null);
@@ -1389,6 +1393,37 @@ export function App(): JSX.Element {
     }
   }
 
+  async function stitchImagineVideos(request: ImagineStitchRequest): Promise<void> {
+    const currentWorkspace = workspaceRef.current;
+
+    if (!currentWorkspace) {
+      appendEntry('error', 'Open a workspace before stitching videos.');
+      return;
+    }
+
+    setIsImagineStitching(true);
+    setImagineEvents([]);
+    setRightRailView('imagine');
+
+    try {
+      const result = await workshop.stitchImagineVideos(request);
+      setImagineAssets((assets) => mergeImagineAssets(result.assets, assets));
+      await refreshWorkspace(currentWorkspace.path);
+      await loadImagineAssets(currentWorkspace.path);
+      appendEntry(
+        'system',
+        `Imagine stitched ${request.videoPaths.length} clips:\n${result.assets.map((asset) => `- ${asset.relativePath}`).join('\n')}`
+      );
+      pushToast('success', 'Video stitched', result.assets.map((asset) => asset.name).join(', '));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      appendEntry('error', message);
+      pushToast('error', 'Video stitch failed', message);
+    } finally {
+      setIsImagineStitching(false);
+    }
+  }
+
   async function openImagineAsset(assetPath: string): Promise<void> {
     try {
       await workshop.openImagineAssetExternal(assetPath);
@@ -1876,7 +1911,7 @@ export function App(): JSX.Element {
     }
 
     if (view === 'imagine') {
-      return isImagineGenerating ? 'working' : `${imagineAssets.length} assets`;
+      return isImagineGenerating || isImagineStitching ? 'working' : `${imagineAssets.length} assets`;
     }
 
     return 'full';
@@ -2140,7 +2175,9 @@ export function App(): JSX.Element {
               assets={imagineAssets}
               events={imagineEvents}
               isGenerating={isImagineGenerating}
+              isStitching={isImagineStitching}
               onGenerate={generateImagineAsset}
+              onStitch={stitchImagineVideos}
               onRefresh={loadImagineAssets}
               onOpenAsset={openImagineAsset}
             />

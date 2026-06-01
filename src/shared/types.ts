@@ -387,11 +387,11 @@ export interface ImportAttachmentsRequest {
   sourcePaths: string[];
 }
 
-export type ImagineMode = 'image-generate' | 'image-edit' | 'video-generate' | 'image-to-video' | 'reference-to-video';
+export type ImagineMode = 'image-generate' | 'image-edit' | 'video-generate' | 'image-to-video' | 'reference-to-video' | 'video-stitch';
 
 export type ImagineAssetKind = 'image' | 'video';
 
-export type ImagineRunPhase = 'submitted' | 'polling' | 'downloading' | 'saved' | 'error';
+export type ImagineRunPhase = 'submitted' | 'polling' | 'processing' | 'downloading' | 'saved' | 'error';
 
 export interface ImagineGenerateRequest {
   runId: string;
@@ -429,6 +429,14 @@ export interface ImagineGenerateResult {
   runId: string;
   assets: ImagineAsset[];
   requestId?: string;
+}
+
+export interface ImagineStitchRequest {
+  runId: string;
+  workspacePath: string;
+  videoPaths: string[];
+  outputFolder: string;
+  filenamePrefix: string;
 }
 
 export interface ImagineRunEvent {
@@ -506,6 +514,7 @@ export interface WorkshopApi {
   saveApiKey: (request: SaveApiKeyRequest) => Promise<void>;
   importAttachments: (request: ImportAttachmentsRequest) => Promise<AttachmentInfo[]>;
   generateImagineAsset: (request: ImagineGenerateRequest) => Promise<ImagineGenerateResult>;
+  stitchImagineVideos: (request: ImagineStitchRequest) => Promise<ImagineGenerateResult>;
   listImagineAssets: (request: ImagineGalleryRequest) => Promise<ImagineAsset[]>;
   openImagineAssetExternal: (assetPath: string) => Promise<void>;
   onImagineEvent: (listener: (event: ImagineRunEvent) => void) => () => void;

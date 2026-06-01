@@ -13,6 +13,7 @@ import type {
   ImagineGenerateRequest,
   ImagineGenerateResult,
   ImagineRunEvent,
+  ImagineStitchRequest,
   ImportAttachmentsRequest,
   ImportSessionBackupResult,
   ImportSettingsBackupResult,
@@ -105,6 +106,8 @@ const api: WorkshopApi = {
     ipcRenderer.invoke('attachments:import', request) as Promise<AttachmentInfo[]>,
   generateImagineAsset: (request: ImagineGenerateRequest) =>
     ipcRenderer.invoke('imagine:generate', request) as Promise<ImagineGenerateResult>,
+  stitchImagineVideos: (request: ImagineStitchRequest) =>
+    ipcRenderer.invoke('imagine:stitch', request) as Promise<ImagineGenerateResult>,
   listImagineAssets: (request: ImagineGalleryRequest) =>
     ipcRenderer.invoke('imagine:list', request) as Promise<ImagineAsset[]>,
   openImagineAssetExternal: (assetPath: string) =>

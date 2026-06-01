@@ -28,6 +28,7 @@ import type {
   ImportSettingsBackupResult,
   ImagineGalleryRequest,
   ImagineGenerateRequest,
+  ImagineStitchRequest,
   PreviewStartRequest,
   QwenPermissionResponse,
   QwenRunRequest,
@@ -669,6 +670,12 @@ function registerIpc(): void {
       throw new Error('Main window is not ready.');
     }
     return imagineService.generate(request, (event) => mainWindow?.webContents.send('imagine:event', event));
+  });
+  ipcMain.handle('imagine:stitch', (_event, request: ImagineStitchRequest) => {
+    if (!mainWindow) {
+      throw new Error('Main window is not ready.');
+    }
+    return imagineService.stitch(request, (event) => mainWindow?.webContents.send('imagine:event', event));
   });
   ipcMain.handle('imagine:list', (_event, request: ImagineGalleryRequest) => imagineService.list(request.workspacePath, request.limit));
   ipcMain.handle('imagine:open-external', async (_event, assetPath: string) => {

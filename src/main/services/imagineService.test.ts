@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -129,12 +129,50 @@ describe('ImagineService', () => {
     expect(await readFile(result.assets[0].path)).toEqual(VIDEO_BYTES);
     expect(events.map((event) => event.phase)).toContain('saved');
   });
+
+  it('stitches workspace videos with ffmpeg and adds the result to the gallery', async () => {
+    const workspacePath = await createTempDirectory('grok-imagine-workspace-');
+    const firstVideo = join(workspacePath, 'assets', 'imagine', 'first.mp4');
+    const secondVideo = join(workspacePath, 'assets', 'imagine', 'second.mp4');
+    await mkdir(join(workspacePath, 'assets', 'imagine'), { recursive: true });
+    await writeFile(firstVideo, VIDEO_BYTES);
+    await writeFile(secondVideo, VIDEO_BYTES);
+    const runFfmpeg = vi.fn(async (args: string[]) => {
+      const inputIndex = args.indexOf('-i');
+      expect(inputIndex).toBeGreaterThan(-1);
+      const concatList = await readFile(args[inputIndex + 1], 'utf8');
+      expect(concatList).toContain('first.mp4');
+      expect(concatList).toContain('second.mp4');
+      await writeFile(args[args.length - 1], Buffer.from('stitched mp4'));
+      return {
+        ok: true,
+        stderr: ''
+      };
+    });
+    const events: ImagineRunEvent[] = [];
+
+    const result = await createService({ runFfmpeg }).stitch({
+      runId: crypto.randomUUID(),
+      workspacePath,
+      videoPaths: [firstVideo, secondVideo],
+      outputFolder: 'assets/imagine',
+      filenamePrefix: 'stitched-test'
+    }, (event) => events.push(event));
+
+    expect(runFfmpeg).toHaveBeenCalledTimes(1);
+    expect(result.assets[0].kind).toBe('video');
+    expect(result.assets[0].mode).toBe('video-stitch');
+    expect(result.assets[0].sourcePaths).toEqual([firstVideo, secondVideo]);
+    expect(await readFile(result.assets[0].path)).toEqual(Buffer.from('stitched mp4'));
+    expect(await createService().list(workspacePath)).toHaveLength(1);
+    expect(events.map((event) => event.phase)).toEqual(['submitted', 'processing', 'saved']);
+  });
 });
 
-function createService(): ImagineService {
+function createService(options: ConstructorParameters<typeof ImagineService>[1] = {}): ImagineService {
   return new ImagineService({
     getApiKey: async () => 'xai-test-key'
-  } as unknown as SettingsStore);
+  } as unknown as SettingsStore, options);
 }
 
 function requestFor(workspacePath: string): ImagineGenerateRequest {
