@@ -322,7 +322,7 @@ button {
   top: 0;
   z-index: 8;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 1px;
   border-bottom: 1px solid var(--line);
   background: var(--line);
@@ -2324,6 +2324,312 @@ button {
 .diagnostic-row.warning {
   border-color: rgba(240, 183, 90, 0.45);
   background: rgba(240, 183, 90, 0.08);
+}
+
+.imagine-panel {
+  min-height: 0;
+}
+
+.imagine-workbench {
+  display: grid;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.imagine-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.imagine-mode-button {
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  align-content: center;
+  gap: 3px;
+  border: 1px solid var(--line);
+  background: var(--dark);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 7px 6px;
+  text-align: center;
+}
+
+.imagine-mode-button svg {
+  justify-self: center;
+  color: var(--red);
+}
+
+.imagine-mode-button span,
+.imagine-mode-button small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imagine-mode-button span {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.imagine-mode-button small {
+  font-size: 9px;
+}
+
+.imagine-mode-button:hover,
+.imagine-mode-button.active {
+  border-color: rgba(228, 168, 79, 0.62);
+  background: rgba(228, 168, 79, 0.09);
+}
+
+.imagine-prompt,
+.imagine-options label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.imagine-prompt span,
+.imagine-options label > span,
+.imagine-source-header span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.imagine-prompt textarea {
+  min-height: 92px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  outline: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent), var(--dark);
+  color: var(--text);
+  padding: 10px;
+  line-height: 1.45;
+}
+
+.imagine-source-zone {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed rgba(228, 168, 79, 0.38);
+  background: rgba(228, 168, 79, 0.045);
+  padding: 10px;
+}
+
+.imagine-source-header,
+.imagine-submit-row,
+.imagine-asset-actions,
+.imagine-event {
+  display: flex;
+  align-items: center;
+}
+
+.imagine-source-header {
+  justify-content: space-between;
+}
+
+.imagine-source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.imagine-source-chip {
+  display: inline-grid;
+  max-width: 100%;
+  grid-template-columns: 16px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  background: var(--near-black);
+  padding: 5px 6px;
+}
+
+.imagine-source-chip span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imagine-source-chip svg {
+  color: var(--red);
+}
+
+.imagine-source-chip button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.imagine-source-chip button:hover {
+  color: var(--text);
+}
+
+.imagine-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.imagine-options input,
+.imagine-options select {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--line);
+  outline: 0;
+  background: #111416;
+  color: var(--text);
+  padding: 0 9px;
+}
+
+.imagine-submit-row {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.imagine-submit-row > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imagine-events {
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 14px;
+}
+
+.imagine-event {
+  gap: 7px;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  background: var(--dark);
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.imagine-event.saved {
+  border-color: rgba(126, 224, 163, 0.42);
+  color: var(--text);
+}
+
+.imagine-event.error {
+  border-color: var(--red);
+  background: var(--red-soft);
+  color: var(--text);
+}
+
+.imagine-event svg {
+  flex: 0 0 auto;
+  color: var(--red);
+}
+
+.imagine-event span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imagine-gallery {
+  min-height: 0;
+}
+
+.imagine-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.imagine-asset-card {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: var(--dark);
+  padding: 8px;
+}
+
+.imagine-asset-preview {
+  display: grid;
+  aspect-ratio: 16 / 10;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.035) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.035) 25%, transparent 25%),
+    var(--black);
+  background-size: 18px 18px;
+}
+
+.imagine-asset-preview img,
+.imagine-asset-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagine-asset-meta {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.imagine-asset-meta strong,
+.imagine-asset-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imagine-asset-meta strong {
+  font-size: 11px;
+}
+
+.imagine-asset-meta span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.imagine-asset-actions {
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.spin-icon {
+  animation: icon-spin 1s linear infinite;
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .runtime-log-panel {

@@ -8,6 +8,11 @@ import type {
   FileTreeNode,
   GitFileStatus,
   GitDiffFile,
+  ImagineAsset,
+  ImagineGalleryRequest,
+  ImagineGenerateRequest,
+  ImagineGenerateResult,
+  ImagineRunEvent,
   ImportAttachmentsRequest,
   ImportSessionBackupResult,
   ImportSettingsBackupResult,
@@ -98,6 +103,17 @@ const api: WorkshopApi = {
   saveApiKey: (request: SaveApiKeyRequest) => ipcRenderer.invoke('secrets:save', request) as Promise<void>,
   importAttachments: (request: ImportAttachmentsRequest) =>
     ipcRenderer.invoke('attachments:import', request) as Promise<AttachmentInfo[]>,
+  generateImagineAsset: (request: ImagineGenerateRequest) =>
+    ipcRenderer.invoke('imagine:generate', request) as Promise<ImagineGenerateResult>,
+  listImagineAssets: (request: ImagineGalleryRequest) =>
+    ipcRenderer.invoke('imagine:list', request) as Promise<ImagineAsset[]>,
+  openImagineAssetExternal: (assetPath: string) =>
+    ipcRenderer.invoke('imagine:open-external', assetPath) as Promise<void>,
+  onImagineEvent: (listener: (event: ImagineRunEvent) => void) => {
+    const wrapped = (_event: Electron.IpcRendererEvent, payload: ImagineRunEvent): void => listener(payload);
+    ipcRenderer.on('imagine:event', wrapped);
+    return () => ipcRenderer.removeListener('imagine:event', wrapped);
+  },
   testQwenConnection: (request: QwenConnectionTestRequest) =>
     ipcRenderer.invoke('qwen:test', request) as Promise<QwenConnectionTestResult>,
   startQwenRun: (request: QwenRunRequest) => ipcRenderer.invoke('qwen:start', request) as Promise<QwenRunStarted>,

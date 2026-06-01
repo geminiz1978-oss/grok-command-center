@@ -1,10 +1,10 @@
 ﻿# Grok Command Center
 
-Grok Command Center is a Grok-native desktop agent workspace. It is designed as a modern dark GUI home for Grok: open a folder, chat with the agent, let it edit locally, review activity, and preview running apps in one place.
+Grok Command Center is a Grok-native desktop agent workspace. It is designed as a modern dark GUI home for Grok: open a folder, chat with the agent, let it edit locally, generate media assets, review activity, and preview running apps in one place.
 
 ## Why This Exists
 
-Grok Command Center is an experimental Codex-style desktop GUI built exclusively for the xAI/Grok ecosystem. The goal is to give Grok users a first-class local developer workspace: secure key setup, project-aware chat, local file editing, live previews, terminal/check tools, session restore, attachments, voice input, usage tracking, and polished diagnostics in one app.
+Grok Command Center is an experimental Codex-style desktop GUI built exclusively for the xAI/Grok ecosystem. The goal is to give Grok users a first-class local developer workspace: secure key setup, project-aware chat, local file editing, image/video generation, live previews, terminal/check tools, session restore, attachments, voice input, usage tracking, and polished diagnostics in one app.
 
 ## Quick Test Drive
 
@@ -47,6 +47,9 @@ API keys are stored in Electron user data through `safeStorage`. They are not st
 - Permission modes: plan, default, auto-edit, yolo
 - Live preview server manager
 - Preview command override with auto-detect, static server, and common dev-server presets
+- Imagine media suite for xAI image generation, image editing, text-to-video, image-to-video, and reference-to-video workflows
+- Workspace asset gallery that immediately saves generated images/videos under `assets/imagine`
+- Imagine status stream for submitted, polling, downloading, saved, and error states
 - Chat attachments for local files, screenshots, audio, and documents
 - Browser speech dictation when Chromium speech recognition is available
 - Markdown-style chat rendering with headings, lists, links, inline code, fenced code blocks, and copy-code buttons
@@ -66,8 +69,8 @@ API keys are stored in Electron user data through `safeStorage`. They are not st
 - Built-in workspace terminal with command presets, detected check shortcuts, output history, and copy controls
 - Command palette for quick workspace, chat, preview, settings, git, terminal, and check actions
 - Model capability badges for thinking, xAI, vision, file input, speed, and preview status
-- Workspace dashboard for recent activity, changed files, checks, checkpoints, usage, and preview state
-- Right-rail view tabs for focused Overview, Build, Runtime, Preview, and All work modes
+- Workspace dashboard for recent activity, changed files, checks, checkpoints, generated assets, usage, and preview state
+- Right-rail view tabs for focused Overview, Build, Runtime, Preview, Imagine, and All work modes
 - Activity timeline for Grok runs, tool activity, command results, preview status, and errors
 - Toast notifications for important run, preview, settings, export, and failure events
 - In-app reliability diagnostics for app mode, Electron/Node versions, storage paths, persisted files, and runtime logs
@@ -136,8 +139,8 @@ npm run dist:win
 This produces:
 
 ```text
-release/Grok-Command-Center-0.1.0-x64-Setup.exe
-release/Grok-Command-Center-0.1.0-x64-Portable.exe
+release/Grok-Command-Center-0.2.0-x64-Setup.exe
+release/Grok-Command-Center-0.2.0-x64-Portable.exe
 ```
 
 For the full package confidence pass:

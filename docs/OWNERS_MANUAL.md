@@ -1,6 +1,6 @@
 ﻿# Grok Command Center Owner's Manual
 
-Grok Command Center is a Grok-native desktop agent workspace. It gives Grok a local home for opening a project folder, reading and editing files, running checks, using the terminal, previewing browser apps, and keeping useful project context around.
+Grok Command Center is a Grok-native desktop agent workspace. It gives Grok a local home for opening a project folder, reading and editing files, generating images and videos, running checks, using the terminal, previewing browser apps, and keeping useful project context around.
 
 ## Quick Start
 
@@ -30,11 +30,12 @@ Grok Command Center is a Grok-native desktop agent workspace. It gives Grok a lo
 - The dashboard summarizes the current workspace at a glance.
 - It shows changed files, detected checks, checkpoints, local usage, preview state, last command, and recent Grok output.
 - Use the dashboard actions for quick open, review, preview, check, and refresh workflows.
-- Use right-rail tabs to switch between Overview, Build, Runtime, Preview, and All panel groups.
+- Use right-rail tabs to switch between Overview, Build, Runtime, Preview, Imagine, and All panel groups.
 - Overview focuses on the dashboard, activity, and chat history.
 - Build focuses on memory, checkpoints, Grok plans, checks, and terminal commands.
 - Runtime focuses on activity, reliability diagnostics, runtime logs, Grok plans, and terminal history.
 - Preview focuses on the live artifact view and recent activity.
+- Imagine focuses on image and video generation plus the generated asset gallery.
 - The activity timeline records recent prompts, Grok responses, tool activity, command results, preview state, and errors.
 - Toast notifications appear for important events such as completed runs, failed commands, preview changes, exports, and permission requests.
 
@@ -95,6 +96,19 @@ Grok Command Center is a Grok-native desktop agent workspace. It gives Grok a lo
 - Use Preferences or the preview configure button to force a specific preview command when auto-detect picks the wrong thing.
 - If a root index.html appears after a Grok run, the app can auto-start preview.
 - The preview panel includes desktop, tablet, and mobile viewport modes plus dev server logs.
+
+## Imagine Media Suite
+
+- Open the Imagine rail to generate media directly into the current workspace.
+- Image mode creates images from text prompts.
+- Edit mode uses one or more source images plus a prompt.
+- Video mode creates text-to-video outputs.
+- I2V mode animates one source image.
+- Refs mode uses reference images to guide a video.
+- Generated files are downloaded immediately into `assets/imagine` so temporary provider URLs are not the source of truth.
+- The gallery shows recent generated images and videos with open-file and copy-path controls.
+- Source images must be PNG, JPG, JPEG, or WEBP.
+- Video renders can take longer than image jobs; watch the status stream for submitted, polling, downloading, and saved states.
 
 ## Models And Endpoints
 

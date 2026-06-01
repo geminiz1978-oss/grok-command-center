@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { AttachmentService } from './services/attachmentService';
 import { FileTreeService } from './services/fileTreeService';
 import { GitService } from './services/gitService';
+import { ImagineService } from './services/imagineService';
 import { PreviewServerService } from './services/previewServerService';
 import { QwenSessionService } from './services/qwenSessionService';
 import { SessionStore } from './services/sessionStore';
@@ -25,6 +26,8 @@ import type {
   ExportTranscriptResult,
   ImportSessionBackupResult,
   ImportSettingsBackupResult,
+  ImagineGalleryRequest,
+  ImagineGenerateRequest,
   PreviewStartRequest,
   QwenPermissionResponse,
   QwenRunRequest,
@@ -63,6 +66,7 @@ const sessionStore = new SessionStore();
 const attachmentService = new AttachmentService();
 const fileTreeService = new FileTreeService();
 const gitService = new GitService();
+const imagineService = new ImagineService(settingsStore);
 const workspaceCommandService = new WorkspaceCommandService();
 const workspaceFileService = new WorkspaceFileService();
 const workspaceMemoryService = new WorkspaceMemoryService();
@@ -660,6 +664,20 @@ function registerIpc(): void {
   ipcMain.handle('secrets:status', () => settingsStore.getSecretStatus());
   ipcMain.handle('secrets:save', (_event, request: SaveApiKeyRequest) => settingsStore.saveApiKey(request.kind, request.value));
   ipcMain.handle('attachments:import', (_event, request) => attachmentService.importAttachments(request));
+  ipcMain.handle('imagine:generate', (_event, request: ImagineGenerateRequest) => {
+    if (!mainWindow) {
+      throw new Error('Main window is not ready.');
+    }
+    return imagineService.generate(request, (event) => mainWindow?.webContents.send('imagine:event', event));
+  });
+  ipcMain.handle('imagine:list', (_event, request: ImagineGalleryRequest) => imagineService.list(request.workspacePath, request.limit));
+  ipcMain.handle('imagine:open-external', async (_event, assetPath: string) => {
+    const error = await shell.openPath(assetPath);
+
+    if (error) {
+      throw new Error(error);
+    }
+  });
   ipcMain.handle('qwen:test', (_event, request) => qwenSessionService.testConnection(request));
   ipcMain.handle('qwen:permission-response', (_event, response: QwenPermissionResponse) =>
     qwenSessionService.resolvePermission(response)

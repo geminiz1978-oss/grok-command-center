@@ -387,6 +387,63 @@ export interface ImportAttachmentsRequest {
   sourcePaths: string[];
 }
 
+export type ImagineMode = 'image-generate' | 'image-edit' | 'video-generate' | 'image-to-video' | 'reference-to-video';
+
+export type ImagineAssetKind = 'image' | 'video';
+
+export type ImagineRunPhase = 'submitted' | 'polling' | 'downloading' | 'saved' | 'error';
+
+export interface ImagineGenerateRequest {
+  runId: string;
+  workspacePath: string;
+  mode: ImagineMode;
+  prompt: string;
+  outputFolder: string;
+  filenamePrefix: string;
+  sourcePaths: string[];
+  imageCount: number;
+  imageAspectRatio: '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
+  imageResolution: '1k' | '2k';
+  videoAspectRatio: '16:9' | '9:16' | '1:1';
+  videoDuration: 6 | 10 | 15;
+  videoResolution: '480p' | '720p';
+}
+
+export interface ImagineAsset {
+  id: string;
+  kind: ImagineAssetKind;
+  mode: ImagineMode;
+  prompt: string;
+  model: string;
+  path: string;
+  relativePath: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+  requestId?: string;
+  sourcePaths?: string[];
+}
+
+export interface ImagineGenerateResult {
+  runId: string;
+  assets: ImagineAsset[];
+  requestId?: string;
+}
+
+export interface ImagineRunEvent {
+  runId: string;
+  phase: ImagineRunPhase;
+  message: string;
+  createdAt: string;
+  requestId?: string;
+}
+
+export interface ImagineGalleryRequest {
+  workspacePath: string;
+  limit?: number;
+}
+
 export interface WorkspaceSessionRecord {
   workspace: WorkspaceInfo;
   chatEntries: ChatEntry[];
@@ -448,6 +505,10 @@ export interface WorkshopApi {
   getSecretStatus: () => Promise<SecretStatus>;
   saveApiKey: (request: SaveApiKeyRequest) => Promise<void>;
   importAttachments: (request: ImportAttachmentsRequest) => Promise<AttachmentInfo[]>;
+  generateImagineAsset: (request: ImagineGenerateRequest) => Promise<ImagineGenerateResult>;
+  listImagineAssets: (request: ImagineGalleryRequest) => Promise<ImagineAsset[]>;
+  openImagineAssetExternal: (assetPath: string) => Promise<void>;
+  onImagineEvent: (listener: (event: ImagineRunEvent) => void) => () => void;
   testQwenConnection: (request: QwenConnectionTestRequest) => Promise<QwenConnectionTestResult>;
   startQwenRun: (request: QwenRunRequest) => Promise<QwenRunStarted>;
   interruptQwenRun: (runId: string) => Promise<void>;
