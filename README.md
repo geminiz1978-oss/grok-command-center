@@ -140,8 +140,8 @@ npm run dist:win
 This produces:
 
 ```text
-release/Grok-Command-Center-0.3.2-x64-Setup.exe
-release/Grok-Command-Center-0.3.2-x64-Portable.exe
+release/Grok-Command-Center-0.3.3-x64-Setup.exe
+release/Grok-Command-Center-0.3.3-x64-Portable.exe
 ```
 
 For the full package confidence pass:

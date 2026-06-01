@@ -299,7 +299,6 @@ export function ImaginePanel({
           <textarea
             value={prompt}
             placeholder="Describe the asset Grok should generate..."
-            disabled={isGenerating}
             onChange={(event) => setPrompt(event.target.value)}
           />
         </label>
