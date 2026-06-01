@@ -511,7 +511,7 @@ export function ImaginePanel({
                     <span>Open</span>
                   </button>
                   {asset.kind === 'video' ? (
-                    <button className="bubble-copy" title="Add video to stitch queue" onClick={() => toggleStitchAsset(asset)} type="button">
+                    <button className="bubble-copy imagine-queue-action" title="Add video to stitch queue" onClick={() => toggleStitchAsset(asset)} type="button">
                       {stitchAssetIds.includes(asset.id) ? <Minus size={12} /> : <Plus size={12} />}
                       <span>{stitchAssetIds.includes(asset.id) ? 'Queued' : 'Queue'}</span>
                     </button>
