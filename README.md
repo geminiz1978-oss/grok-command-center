@@ -166,4 +166,14 @@ The first prototype defaults to `grok-4.3` with the xAI API endpoint. If your xA
 
 The owner's manual lives at `docs/OWNERS_MANUAL.md` and is also available inside the app from the help button, F1, or the command palette.
 
+### Interface Preview
+<p align="center">
+  <img src="Screenshot (216).png" width="45%" alt="Grok Command Center Dashboard" />
+  <img src="Screenshot (217).png" width="45%" alt="Model Selection" />
+</p>
+<p align="center">
+  <img src="Screenshot (218).png" width="45%" alt="Agent Checklist" />
+  <img src="Screenshot (219).png" width="45%" alt="Permission Settings" />
+</p>
+
 
