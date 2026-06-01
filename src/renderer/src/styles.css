@@ -2645,6 +2645,7 @@ button {
 
 .imagine-asset-card {
   display: grid;
+  position: relative;
   min-width: 0;
   gap: 7px;
   border: 1px solid var(--line);
@@ -2699,6 +2700,29 @@ button {
 .imagine-asset-preview-button:focus-visible .imagine-preview-hint {
   opacity: 1;
   transform: translateY(0);
+}
+
+.imagine-asset-delete {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgba(247, 211, 88, 0.46);
+  background: rgba(0, 0, 0, 0.76);
+  color: var(--gold);
+  cursor: pointer;
+}
+
+.imagine-asset-delete:hover,
+.imagine-asset-delete:focus-visible {
+  border-color: var(--red);
+  background: var(--red-soft);
+  color: var(--text);
+  outline: none;
 }
 
 .imagine-asset-preview img,

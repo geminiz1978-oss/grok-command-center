@@ -6,6 +6,7 @@ import ffmpegStaticPath from 'ffmpeg-static';
 import type { SettingsStore } from './settingsStore';
 import type {
   ImagineAsset,
+  ImagineDeleteResult,
   ImagineGenerateRequest,
   ImagineGenerateResult,
   ImagineMode,
@@ -121,10 +122,46 @@ export class ImagineService {
   }
 
   async list(workspacePath: string, limit = 48): Promise<ImagineAsset[]> {
-    const gallery = await this.readGallery(resolve(workspacePath));
-    return gallery
+    const resolvedWorkspacePath = resolve(workspacePath);
+    const gallery = await this.readGallery(resolvedWorkspacePath);
+    const existing = await filterExistingAssets(resolvedWorkspacePath, gallery);
+
+    if (existing.length !== gallery.length) {
+      await writeJson(join(resolvedWorkspacePath, GALLERY_INDEX_PATH), existing);
+    }
+
+    return existing
       .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
       .slice(0, Math.max(1, Math.min(limit, 200)));
+  }
+
+  async delete(workspacePath: string, assetPath: string): Promise<ImagineDeleteResult> {
+    const resolvedWorkspacePath = resolve(workspacePath);
+    const resolvedAssetPath = resolveWorkspacePath(resolvedWorkspacePath, assetPath);
+    const gallery = await this.readGallery(resolvedWorkspacePath);
+    const removedFromGallery = gallery.some((asset) => resolve(asset.path) === resolvedAssetPath);
+    const filtered = gallery.filter((asset) => resolve(asset.path) !== resolvedAssetPath);
+    let deletedFile = false;
+
+    try {
+      const fileStat = await stat(resolvedAssetPath);
+      if (fileStat.isFile()) {
+        await rm(resolvedAssetPath, { force: true });
+        deletedFile = true;
+      }
+    } catch {
+      deletedFile = false;
+    }
+
+    const existing = await filterExistingAssets(resolvedWorkspacePath, filtered);
+    await writeJson(join(resolvedWorkspacePath, GALLERY_INDEX_PATH), existing);
+
+    return {
+      deletedPath: resolvedAssetPath,
+      deletedFile,
+      removedFromGallery,
+      assets: existing
+    };
   }
 
   async stitch(request: ImagineStitchRequest, emit: EmitImagineEvent): Promise<ImagineGenerateResult> {
@@ -604,6 +641,24 @@ function slugify(value: string): string {
 function isImagineAsset(value: unknown): value is ImagineAsset {
   const record = value as Partial<ImagineAsset>;
   return Boolean(record && typeof record.path === 'string' && typeof record.relativePath === 'string' && typeof record.createdAt === 'string');
+}
+
+async function filterExistingAssets(workspacePath: string, assets: ImagineAsset[]): Promise<ImagineAsset[]> {
+  const existing: ImagineAsset[] = [];
+
+  for (const asset of assets) {
+    try {
+      const assetPath = resolveWorkspacePath(workspacePath, asset.path);
+      const fileStat = await stat(assetPath);
+      if (fileStat.isFile()) {
+        existing.push(asset);
+      }
+    } catch {
+      // Missing files are stale gallery entries and should disappear on the next load.
+    }
+  }
+
+  return existing;
 }
 
 function toConcatFileLine(filePath: string): string {

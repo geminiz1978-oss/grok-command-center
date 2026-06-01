@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SettingsStore } from './settingsStore';
 import { ImagineService } from './imagineService';
@@ -167,6 +167,30 @@ describe('ImagineService', () => {
     expect(await createService().list(workspacePath)).toHaveLength(1);
     expect(events.map((event) => event.phase)).toEqual(['submitted', 'processing', 'saved']);
   });
+
+  it('prunes missing gallery assets when listing', async () => {
+    const workspacePath = await createTempDirectory('grok-imagine-workspace-');
+    const service = createService();
+    const result = await generateTestImage(service, workspacePath);
+    await rm(result.assets[0].path, { force: true });
+
+    expect(await service.list(workspacePath)).toEqual([]);
+    expect(JSON.parse(await readFile(join(workspacePath, '.grok-command-center', 'imagine-gallery.json'), 'utf8'))).toEqual([]);
+  });
+
+  it('deletes generated media from disk and the gallery', async () => {
+    const workspacePath = await createTempDirectory('grok-imagine-workspace-');
+    const service = createService();
+    const result = await generateTestImage(service, workspacePath);
+
+    const deleteResult = await service.delete(workspacePath, result.assets[0].path);
+
+    expect(deleteResult.deletedFile).toBe(true);
+    expect(deleteResult.removedFromGallery).toBe(true);
+    expect(deleteResult.assets).toEqual([]);
+    await expect(stat(result.assets[0].path)).rejects.toThrow();
+    expect(await service.list(workspacePath)).toEqual([]);
+  });
 });
 
 function createService(options: ConstructorParameters<typeof ImagineService>[1] = {}): ImagineService {
@@ -191,6 +215,14 @@ function requestFor(workspacePath: string): ImagineGenerateRequest {
     videoDuration: 6,
     videoResolution: '720p'
   };
+}
+
+async function generateTestImage(service: ImagineService, workspacePath: string): Promise<Awaited<ReturnType<ImagineService['generate']>>> {
+  mockFetch(async () => jsonResponse({ data: [{ b64_json: PNG_BYTES.toString('base64') }] }));
+  const result = await service.generate(requestFor(workspacePath), vi.fn());
+  expect(basename(result.assets[0].path)).toMatch(/^test-imagine-/);
+  vi.unstubAllGlobals();
+  return result;
 }
 
 async function createTempDirectory(prefix: string): Promise<string> {

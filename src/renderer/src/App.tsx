@@ -1432,6 +1432,34 @@ export function App(): JSX.Element {
     }
   }
 
+  async function deleteImagineAsset(asset: ImagineAsset): Promise<void> {
+    const currentWorkspace = workspaceRef.current;
+
+    if (!currentWorkspace) {
+      appendEntry('error', 'Open a workspace before deleting generated media.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${asset.name}" from the gallery and disk?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const result = await workshop.deleteImagineAsset({
+        workspacePath: currentWorkspace.path,
+        assetPath: asset.path
+      });
+      setImagineAssets(result.assets);
+      await refreshWorkspace(currentWorkspace.path);
+      pushToast('success', 'Media deleted', asset.name);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      appendEntry('error', message);
+      pushToast('error', 'Delete failed', message);
+    }
+  }
+
   async function startQwen(prompt: string, attachments: AttachmentInfo[] = []): Promise<void> {
     if (!workspace || !settings) {
       appendEntry('error', 'Open a workspace before starting Grok.');
@@ -2180,6 +2208,7 @@ export function App(): JSX.Element {
               onStitch={stitchImagineVideos}
               onRefresh={loadImagineAssets}
               onOpenAsset={openImagineAsset}
+              onDeleteAsset={deleteImagineAsset}
             />
           ) : null}
         </div>

@@ -26,6 +26,7 @@ import type {
   ExportTranscriptResult,
   ImportSessionBackupResult,
   ImportSettingsBackupResult,
+  ImagineDeleteRequest,
   ImagineGalleryRequest,
   ImagineGenerateRequest,
   ImagineStitchRequest,
@@ -677,6 +678,9 @@ function registerIpc(): void {
     }
     return imagineService.stitch(request, (event) => mainWindow?.webContents.send('imagine:event', event));
   });
+  ipcMain.handle('imagine:delete', (_event, request: ImagineDeleteRequest) =>
+    imagineService.delete(request.workspacePath, request.assetPath)
+  );
   ipcMain.handle('imagine:list', (_event, request: ImagineGalleryRequest) => imagineService.list(request.workspacePath, request.limit));
   ipcMain.handle('imagine:open-external', async (_event, assetPath: string) => {
     const error = await shell.openPath(assetPath);

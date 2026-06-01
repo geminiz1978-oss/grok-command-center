@@ -439,6 +439,18 @@ export interface ImagineStitchRequest {
   filenamePrefix: string;
 }
 
+export interface ImagineDeleteRequest {
+  workspacePath: string;
+  assetPath: string;
+}
+
+export interface ImagineDeleteResult {
+  deletedPath: string;
+  deletedFile: boolean;
+  removedFromGallery: boolean;
+  assets: ImagineAsset[];
+}
+
 export interface ImagineRunEvent {
   runId: string;
   phase: ImagineRunPhase;
@@ -515,6 +527,7 @@ export interface WorkshopApi {
   importAttachments: (request: ImportAttachmentsRequest) => Promise<AttachmentInfo[]>;
   generateImagineAsset: (request: ImagineGenerateRequest) => Promise<ImagineGenerateResult>;
   stitchImagineVideos: (request: ImagineStitchRequest) => Promise<ImagineGenerateResult>;
+  deleteImagineAsset: (request: ImagineDeleteRequest) => Promise<ImagineDeleteResult>;
   listImagineAssets: (request: ImagineGalleryRequest) => Promise<ImagineAsset[]>;
   openImagineAssetExternal: (assetPath: string) => Promise<void>;
   onImagineEvent: (listener: (event: ImagineRunEvent) => void) => () => void;

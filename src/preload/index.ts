@@ -9,6 +9,8 @@ import type {
   GitFileStatus,
   GitDiffFile,
   ImagineAsset,
+  ImagineDeleteRequest,
+  ImagineDeleteResult,
   ImagineGalleryRequest,
   ImagineGenerateRequest,
   ImagineGenerateResult,
@@ -108,6 +110,8 @@ const api: WorkshopApi = {
     ipcRenderer.invoke('imagine:generate', request) as Promise<ImagineGenerateResult>,
   stitchImagineVideos: (request: ImagineStitchRequest) =>
     ipcRenderer.invoke('imagine:stitch', request) as Promise<ImagineGenerateResult>,
+  deleteImagineAsset: (request: ImagineDeleteRequest) =>
+    ipcRenderer.invoke('imagine:delete', request) as Promise<ImagineDeleteResult>,
   listImagineAssets: (request: ImagineGalleryRequest) =>
     ipcRenderer.invoke('imagine:list', request) as Promise<ImagineAsset[]>,
   openImagineAssetExternal: (assetPath: string) =>

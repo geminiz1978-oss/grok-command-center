@@ -42,6 +42,7 @@ interface ImaginePanelProps {
   onStitch: (request: ImagineStitchRequest) => Promise<void>;
   onRefresh: () => Promise<void>;
   onOpenAsset: (assetPath: string) => Promise<void>;
+  onDeleteAsset: (asset: ImagineAsset) => Promise<void>;
 }
 
 interface ImagineModeOption {
@@ -100,7 +101,8 @@ export function ImaginePanel({
   onGenerate,
   onStitch,
   onRefresh,
-  onOpenAsset
+  onOpenAsset,
+  onDeleteAsset
 }: ImaginePanelProps): JSX.Element {
   const [mode, setMode] = useState<ImagineMode>('image-generate');
   const [prompt, setPrompt] = useState('');
@@ -496,6 +498,15 @@ export function ImaginePanel({
                   <span className="imagine-preview-hint">
                     <Maximize2 size={13} />
                   </span>
+                </button>
+                <button
+                  aria-label={`Delete ${asset.name}`}
+                  className="imagine-asset-delete"
+                  title="Delete generated asset"
+                  onClick={() => void onDeleteAsset(asset)}
+                  type="button"
+                >
+                  <Trash2 size={13} />
                 </button>
                 <div className="imagine-asset-meta">
                   <strong title={asset.name}>{asset.name}</strong>
