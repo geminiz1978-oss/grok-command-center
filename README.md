@@ -48,7 +48,7 @@ API keys are stored in Electron user data through `safeStorage`. They are not st
 - Live preview server manager
 - Preview command override with auto-detect, static server, and common dev-server presets
 - Imagine media suite for xAI image generation, image editing, text-to-video, image-to-video, and reference-to-video workflows
-- Workspace asset gallery that immediately saves generated images/videos under `assets/imagine` with large in-app preview playback
+- Workspace asset gallery that immediately saves generated images/videos under `assets/imagine` with large in-app preview playback, stale-file cleanup, and direct gallery deletion controls
 - Local FFmpeg-powered video stitcher for queueing generated clips and exporting longer MP4s
 - Imagine status stream for submitted, polling, downloading, saved, and error states
 - Chat attachments for local files, screenshots, audio, and documents
@@ -140,8 +140,8 @@ npm run dist:win
 This produces:
 
 ```text
-release/Grok-Command-Center-0.2.0-x64-Setup.exe
-release/Grok-Command-Center-0.2.0-x64-Portable.exe
+release/Grok-Command-Center-0.3.2-x64-Setup.exe
+release/Grok-Command-Center-0.3.2-x64-Portable.exe
 ```
 
 For the full package confidence pass:
