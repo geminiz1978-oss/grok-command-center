@@ -1,4 +1,4 @@
-import { Activity, CheckCircle2, DatabaseBackup, GitBranch, Gauge, Play, RefreshCw } from 'lucide-react';
+import { Activity, CheckCircle2, DatabaseBackup, GitBranch, Gauge, Play, RefreshCw, Sparkles } from 'lucide-react';
 import type {
   ChatEntry,
   GitFileStatus,
@@ -17,6 +17,7 @@ interface WorkspaceDashboardProps {
   commandHistory: WorkspaceCommandHistoryItem[];
   chatEntries: ChatEntry[];
   previewInfo: PreviewInfo | null;
+  imagineAssetCount: number;
   usageText: string;
   usagePercent: number;
   isRunning: boolean;
@@ -35,6 +36,7 @@ export function WorkspaceDashboard({
   commandHistory,
   chatEntries,
   previewInfo,
+  imagineAssetCount,
   usageText,
   usagePercent,
   isRunning,
@@ -64,6 +66,7 @@ export function WorkspaceDashboard({
         <Metric icon={<GitBranch size={14} />} label="Changes" value={String(gitStatus.length)} tone={gitStatus.length ? 'warning' : 'muted'} />
         <Metric icon={<CheckCircle2 size={14} />} label="Checks" value={String(checks.length)} tone={checks.length ? 'ok' : 'muted'} />
         <Metric icon={<DatabaseBackup size={14} />} label="Checkpoints" value={String(checkpoints.length)} tone={checkpoints.length ? 'ok' : 'muted'} />
+        <Metric icon={<Sparkles size={14} />} label="Assets" value={String(imagineAssetCount)} tone={imagineAssetCount ? 'ok' : 'muted'} />
         <Metric icon={<Gauge size={14} />} label="Usage" value={usageText} tone={usagePercent >= 80 ? 'warning' : 'muted'} />
       </div>
 

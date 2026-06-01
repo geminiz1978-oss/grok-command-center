@@ -10,6 +10,10 @@ import type {
   FileTreeNode,
   GitDiffFile,
   GitFileStatus,
+  ImagineAsset,
+  ImagineGenerateRequest,
+  ImagineRunEvent,
+  ImagineStitchRequest,
   PromptTemplateConfig,
   PreviewEvent,
   PreviewInfo,
@@ -37,6 +41,7 @@ import { CheckRunnerPanel } from './components/CheckRunnerPanel';
 import { ChatPanel } from './components/ChatPanel';
 import { CommandPalette, type CommandPaletteAction } from './components/CommandPalette';
 import { FileEditorPanel } from './components/FileEditorPanel';
+import { ImaginePanel } from './components/ImaginePanel';
 import { ModelSettings } from './components/ModelSettings';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { OwnerManual } from './components/OwnerManual';
@@ -55,13 +60,14 @@ import { workshop } from './workshopClient';
 import workshopIconUrl from './assets/grok-command-center-icon.png';
 import workshopLogoUrl from './assets/grok-command-center-logo.png';
 
-type RightRailView = 'overview' | 'build' | 'runtime' | 'preview' | 'all';
+type RightRailView = 'overview' | 'build' | 'runtime' | 'preview' | 'imagine' | 'all';
 
 const RIGHT_RAIL_VIEWS: Array<{ id: RightRailView; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'build', label: 'Build' },
   { id: 'runtime', label: 'Runtime' },
   { id: 'preview', label: 'Preview' },
+  { id: 'imagine', label: 'Imagine' },
   { id: 'all', label: 'All' }
 ];
 
@@ -108,6 +114,10 @@ export function App(): JSX.Element {
   const [permissionRequests, setPermissionRequests] = useState<QwenPermissionRequest[]>([]);
   const [previewInfo, setPreviewInfo] = useState<PreviewInfo | null>(null);
   const [previewLogs, setPreviewLogs] = useState<string[]>([]);
+  const [imagineAssets, setImagineAssets] = useState<ImagineAsset[]>([]);
+  const [imagineEvents, setImagineEvents] = useState<ImagineRunEvent[]>([]);
+  const [isImagineGenerating, setIsImagineGenerating] = useState(false);
+  const [isImagineStitching, setIsImagineStitching] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isOwnerManualOpen, setIsOwnerManualOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -134,12 +144,14 @@ export function App(): JSX.Element {
     const offQwen = workshop.onQwenEvent(handleQwenEvent);
     const offPermission = workshop.onQwenPermissionRequest(handleQwenPermissionRequest);
     const offPreview = workshop.onPreviewEvent(handlePreviewEvent);
+    const offImagine = workshop.onImagineEvent(handleImagineEvent);
 
     return () => {
       void saveSessionNow();
       offQwen();
       offPermission();
       offPreview();
+      offImagine();
       if (sessionSaveTimerRef.current) {
         window.clearTimeout(sessionSaveTimerRef.current);
       }
@@ -303,6 +315,13 @@ export function App(): JSX.Element {
         group: 'Layout',
         description: 'Focus the right rail on preview and recent activity',
         run: () => setRightRailView('preview')
+      },
+      {
+        id: 'layout-imagine',
+        label: 'Show Imagine suite',
+        group: 'Layout',
+        description: 'Generate images and videos into the open workspace',
+        run: () => setRightRailView('imagine')
       },
       {
         id: 'layout-all',
@@ -524,6 +543,7 @@ export function App(): JSX.Element {
       await refreshWorkspace(activeRecord.workspace.path);
       await refreshWorkspaceChecks(activeRecord.workspace.path);
       await refreshProjectTools(activeRecord.workspace.path);
+      await loadImagineAssets(activeRecord.workspace.path);
     }
 
     sessionPersistenceReadyRef.current = true;
@@ -558,6 +578,10 @@ export function App(): JSX.Element {
     setAgentTodos(targetSession?.agentTodos ?? []);
     setPreviewInfo(null);
     setPreviewLogs([]);
+    setImagineAssets([]);
+    setImagineEvents([]);
+    setIsImagineGenerating(false);
+    setIsImagineStitching(false);
     setCommandResult(null);
     setGitDiffFiles([]);
     setWorkspaceMemory(null);
@@ -571,6 +595,7 @@ export function App(): JSX.Element {
     await refreshWorkspace(selected.path);
     await refreshWorkspaceChecks(selected.path);
     await refreshProjectTools(selected.path);
+    await loadImagineAssets(selected.path);
 
     if (options.announce ?? true) {
       appendEntry('system', `${targetSession ? 'Workspace reopened' : 'Workspace opened'}: ${selected.path}`);
@@ -655,6 +680,10 @@ export function App(): JSX.Element {
     setLastRunRequest(null);
     setPreviewInfo(null);
     setPreviewLogs([]);
+    setImagineAssets([]);
+    setImagineEvents([]);
+    setIsImagineGenerating(false);
+    setIsImagineStitching(false);
     setCommandResult(null);
     setGitDiffFiles([]);
     setWorkspaceMemory(null);
@@ -739,6 +768,7 @@ export function App(): JSX.Element {
       refreshWorkspace(currentWorkspace.path),
       refreshWorkspaceChecks(currentWorkspace.path),
       refreshProjectTools(currentWorkspace.path),
+      loadImagineAssets(currentWorkspace.path),
       isReviewOpen ? loadGitDiff(currentWorkspace.path) : Promise.resolve()
     ]);
   }
@@ -1318,6 +1348,118 @@ export function App(): JSX.Element {
     }
   }
 
+  async function loadImagineAssets(workspacePath = workspaceRef.current?.path): Promise<void> {
+    if (!workspacePath) {
+      setImagineAssets([]);
+      return;
+    }
+
+    try {
+      setImagineAssets(await workshop.listImagineAssets({ workspacePath, limit: 80 }));
+    } catch (error) {
+      setImagineAssets([]);
+      appendEntry('error', `Could not load Imagine assets: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async function generateImagineAsset(request: ImagineGenerateRequest): Promise<void> {
+    const currentWorkspace = workspaceRef.current;
+
+    if (!currentWorkspace) {
+      appendEntry('error', 'Open a workspace before using Imagine.');
+      return;
+    }
+
+    setIsImagineGenerating(true);
+    setImagineEvents([]);
+    setRightRailView('imagine');
+
+    try {
+      const result = await workshop.generateImagineAsset(request);
+      setImagineAssets((assets) => mergeImagineAssets(result.assets, assets));
+      await refreshWorkspace(currentWorkspace.path);
+      await loadImagineAssets(currentWorkspace.path);
+      appendEntry(
+        'system',
+        `Imagine saved ${result.assets.length} ${result.assets.length === 1 ? 'asset' : 'assets'}:\n${result.assets.map((asset) => `- ${asset.relativePath}`).join('\n')}`
+      );
+      pushToast('success', 'Imagine complete', result.assets.map((asset) => asset.name).join(', '));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      appendEntry('error', message);
+      pushToast('error', 'Imagine failed', message);
+    } finally {
+      setIsImagineGenerating(false);
+    }
+  }
+
+  async function stitchImagineVideos(request: ImagineStitchRequest): Promise<void> {
+    const currentWorkspace = workspaceRef.current;
+
+    if (!currentWorkspace) {
+      appendEntry('error', 'Open a workspace before stitching videos.');
+      return;
+    }
+
+    setIsImagineStitching(true);
+    setImagineEvents([]);
+    setRightRailView('imagine');
+
+    try {
+      const result = await workshop.stitchImagineVideos(request);
+      setImagineAssets((assets) => mergeImagineAssets(result.assets, assets));
+      await refreshWorkspace(currentWorkspace.path);
+      await loadImagineAssets(currentWorkspace.path);
+      appendEntry(
+        'system',
+        `Imagine stitched ${request.videoPaths.length} clips:\n${result.assets.map((asset) => `- ${asset.relativePath}`).join('\n')}`
+      );
+      pushToast('success', 'Video stitched', result.assets.map((asset) => asset.name).join(', '));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      appendEntry('error', message);
+      pushToast('error', 'Video stitch failed', message);
+    } finally {
+      setIsImagineStitching(false);
+    }
+  }
+
+  async function openImagineAsset(assetPath: string): Promise<void> {
+    try {
+      await workshop.openImagineAssetExternal(assetPath);
+    } catch (error) {
+      appendEntry('error', error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function deleteImagineAsset(asset: ImagineAsset): Promise<void> {
+    const currentWorkspace = workspaceRef.current;
+
+    if (!currentWorkspace) {
+      appendEntry('error', 'Open a workspace before deleting generated media.');
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete "${asset.name}" from the gallery and disk?`);
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const result = await workshop.deleteImagineAsset({
+        workspacePath: currentWorkspace.path,
+        assetPath: asset.path
+      });
+      setImagineAssets(result.assets);
+      await refreshWorkspace(currentWorkspace.path);
+      pushToast('success', 'Media deleted', asset.name);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      appendEntry('error', message);
+      pushToast('error', 'Delete failed', message);
+    }
+  }
+
   async function startQwen(prompt: string, attachments: AttachmentInfo[] = []): Promise<void> {
     if (!workspace || !settings) {
       appendEntry('error', 'Open a workspace before starting Grok.');
@@ -1610,6 +1752,14 @@ export function App(): JSX.Element {
     }
   }
 
+  function handleImagineEvent(event: ImagineRunEvent): void {
+    setImagineEvents((events) => [event, ...events].slice(0, 12));
+
+    if (event.phase === 'saved') {
+      void loadImagineAssets();
+    }
+  }
+
   function appendEntry(role: ChatEntry['role'], text: string, attachments?: AttachmentInfo[]): void {
     if (role === 'error') {
       pushToast('error', 'Grok Command Center', compactToast(text));
@@ -1788,6 +1938,10 @@ export function App(): JSX.Element {
       return previewInfo?.status ?? 'idle';
     }
 
+    if (view === 'imagine') {
+      return isImagineGenerating || isImagineStitching ? 'working' : `${imagineAssets.length} assets`;
+    }
+
     return 'full';
   }
 
@@ -1946,6 +2100,7 @@ export function App(): JSX.Element {
               commandHistory={commandHistory}
               chatEntries={chatEntries}
               previewInfo={previewInfo}
+              imagineAssetCount={imagineAssets.length}
               usageText={`${formatTokenCount(usageEstimate)} / ${formatTokenCount(usageLimit)}`}
               usagePercent={usagePercent}
               isRunning={isQwenRunning}
@@ -2040,6 +2195,22 @@ export function App(): JSX.Element {
               onConfigure={() => setIsPreferencesOpen(true)}
             />
           ) : null}
+
+          {(rightRailView === 'imagine' || rightRailView === 'all') ? (
+            <ImaginePanel
+              workspace={workspace}
+              secretStatus={secretStatus}
+              assets={imagineAssets}
+              events={imagineEvents}
+              isGenerating={isImagineGenerating}
+              isStitching={isImagineStitching}
+              onGenerate={generateImagineAsset}
+              onStitch={stitchImagineVideos}
+              onRefresh={loadImagineAssets}
+              onOpenAsset={openImagineAsset}
+              onDeleteAsset={deleteImagineAsset}
+            />
+          ) : null}
         </div>
       </section>
 
@@ -2129,6 +2300,21 @@ function markRunStalled(status: QwenRunStatus | null, now: number): QwenRunStatu
     ...status,
     phase: 'stalled'
   };
+}
+
+function mergeImagineAssets(incoming: ImagineAsset[], current: ImagineAsset[]): ImagineAsset[] {
+  const seen = new Set<string>();
+  return [...incoming, ...current]
+    .filter((asset) => {
+      const key = asset.path.toLowerCase();
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 80);
 }
 
 function estimateUsageTokens(entries: ChatEntry[]): number {

@@ -97,6 +97,18 @@ const mockWorkshop: WorkshopApi = {
   importAttachments: async () => {
     throw new Error('Grok Command Center desktop bridge is not available in browser preview.');
   },
+  generateImagineAsset: async () => {
+    throw new Error('Grok Command Center desktop bridge is not available in browser preview.');
+  },
+  stitchImagineVideos: async () => {
+    throw new Error('Grok Command Center desktop bridge is not available in browser preview.');
+  },
+  deleteImagineAsset: async () => {
+    throw new Error('Grok Command Center desktop bridge is not available in browser preview.');
+  },
+  listImagineAssets: async () => [],
+  openImagineAssetExternal: async () => undefined,
+  onImagineEvent: () => () => undefined,
   testQwenConnection: async (request) => ({
     ok: false,
     message: 'Grok Command Center desktop bridge is not available in browser preview.',

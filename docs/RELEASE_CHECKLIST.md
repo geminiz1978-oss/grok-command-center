@@ -48,6 +48,9 @@ Run this after `npm.cmd run pack` or `npm.cmd run check:package` when you want t
 - Watch the run status card for elapsed time, idle time, last activity, stalled state, stop, and retry.
 - Verify file tree refreshes after completion.
 - Verify live preview starts and serves the generated app.
+- Open Imagine, run a low-cost image generation, and confirm the saved file appears under `assets/imagine`.
+- If testing video credits, run one short 6-second video generation and confirm the polling status resolves and the MP4 is saved locally.
+- Queue two generated videos in Imagine, export a stitched MP4, and confirm it appears in the gallery.
 - Restart the app and confirm workspace/session restore.
 - Open Runtime diagnostics and confirm settings, session, secrets, and runtime log paths look sane.
 - Export a transcript and a session backup.
