@@ -40,6 +40,10 @@ interface XaiVideoGenerationResponse {
 interface XaiVideoStatusResponse {
   status?: string;
   progress?: number;
+  video?: {
+    url?: string;
+    duration?: number;
+  };
   url?: string;
   video_url?: string;
   videoUrl?: string;
@@ -181,7 +185,8 @@ export class ImagineService {
 
     emitImagine(emit, request.runId, 'polling', 'Video request accepted. Waiting for render.', requestId);
     const status = await this.pollVideo(apiKey, request.runId, requestId, emit);
-    const videoUrl = status.url
+    const videoUrl = status.video?.url
+      ?? status.url
       ?? status.video_url
       ?? status.videoUrl
       ?? status.output_url
@@ -230,11 +235,11 @@ export class ImagineService {
         emitImagine(emit, runId, 'polling', `Video status: ${state}${progress}.`, requestId);
       }
 
-      if (state === 'completed' || state === 'succeeded' || state === 'ready') {
+      if (state === 'done' || state === 'completed' || state === 'succeeded' || state === 'ready') {
         return status;
       }
 
-      if (state === 'failed' || state === 'cancelled' || state === 'canceled' || state === 'error') {
+      if (state === 'failed' || state === 'expired' || state === 'cancelled' || state === 'canceled' || state === 'error') {
         throw new Error(status.error?.message ?? `Video generation failed with status: ${state || 'unknown'}.`);
       }
 

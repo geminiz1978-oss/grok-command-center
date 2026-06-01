@@ -106,7 +106,7 @@ describe('ImagineService', () => {
       }
 
       if (target.endsWith('/videos/video_123')) {
-        return jsonResponse({ status: 'completed', data: { videoUrl: 'https://example.test/video.mp4' } });
+        return jsonResponse({ status: 'done', video: { url: 'https://example.test/video.mp4' } });
       }
 
       if (target === 'https://example.test/video.mp4') {
