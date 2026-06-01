@@ -7,13 +7,15 @@ import {
   FolderOpen,
   Image,
   Loader2,
+  Maximize2,
   RefreshCw,
   Sparkles,
   Trash2,
   Video,
-  Wand2
+  Wand2,
+  X
 } from 'lucide-react';
-import { useMemo, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent, type MouseEvent } from 'react';
 import type {
   ImagineAsset,
   ImagineGenerateRequest,
@@ -102,6 +104,7 @@ export function ImaginePanel({
   const [videoResolution, setVideoResolution] = useState<ImagineGenerateRequest['videoResolution']>('720p');
   const [sourcePaths, setSourcePaths] = useState<string[]>([]);
   const [copiedPath, setCopiedPath] = useState('');
+  const [selectedAsset, setSelectedAsset] = useState<ImagineAsset | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const selectedMode = MODE_OPTIONS.find((option) => option.id === mode) ?? MODE_OPTIONS[0];
   const latestEvent = events[0];
@@ -110,6 +113,27 @@ export function ImaginePanel({
     images: assets.filter((asset) => asset.kind === 'image'),
     videos: assets.filter((asset) => asset.kind === 'video')
   }), [assets]);
+
+  useEffect(() => {
+    if (selectedAsset && !assets.some((asset) => asset.id === selectedAsset.id)) {
+      setSelectedAsset(null);
+    }
+  }, [assets, selectedAsset]);
+
+  useEffect(() => {
+    if (!selectedAsset) {
+      return undefined;
+    }
+
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        setSelectedAsset(null);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedAsset]);
 
   async function submit(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -167,6 +191,10 @@ export function ImaginePanel({
     await navigator.clipboard.writeText(asset.path);
     setCopiedPath(asset.path);
     window.setTimeout(() => setCopiedPath(''), 1200);
+  }
+
+  function stopModalEvent(event: MouseEvent<HTMLElement>): void {
+    event.stopPropagation();
   }
 
   return (
@@ -357,13 +385,16 @@ export function ImaginePanel({
           <div className="imagine-gallery-grid">
             {[...galleryGroups.images, ...galleryGroups.videos].map((asset) => (
               <article className="imagine-asset-card" key={asset.id}>
-                <div className="imagine-asset-preview">
+                <button className="imagine-asset-preview imagine-asset-preview-button" title={`Preview ${asset.name}`} onClick={() => setSelectedAsset(asset)} type="button">
                   {asset.kind === 'image' ? (
                     <img src={assetUrl(asset.path)} alt="" />
                   ) : (
-                    <video src={assetUrl(asset.path)} muted controls />
+                    <video src={assetUrl(asset.path)} muted preload="metadata" />
                   )}
-                </div>
+                  <span className="imagine-preview-hint">
+                    <Maximize2 size={13} />
+                  </span>
+                </button>
                 <div className="imagine-asset-meta">
                   <strong title={asset.name}>{asset.name}</strong>
                   <span>{asset.mode.replace(/-/g, ' ')} - {formatBytes(asset.size)}</span>
@@ -385,6 +416,43 @@ export function ImaginePanel({
           <p className="empty-copy">Generated images and videos will appear here after they are saved into the workspace.</p>
         )}
       </section>
+
+      {selectedAsset ? (
+        <div className="imagine-lightbox-overlay" role="presentation" onMouseDown={() => setSelectedAsset(null)}>
+          <section className="imagine-lightbox" role="dialog" aria-modal="true" aria-label="Media preview" onMouseDown={stopModalEvent}>
+            <header className="imagine-lightbox-header">
+              <div>
+                <span className="eyebrow">{selectedAsset.kind}</span>
+                <h2 title={selectedAsset.name}>{selectedAsset.name}</h2>
+              </div>
+              <div className="imagine-lightbox-actions">
+                <button className="bubble-copy" title="Copy file path" onClick={() => void copyPath(selectedAsset)} type="button">
+                  <Copy size={13} />
+                  <span>{copiedPath === selectedAsset.path ? 'Copied' : 'Path'}</span>
+                </button>
+                <button className="bubble-copy" title="Open generated asset" onClick={() => void onOpenAsset(selectedAsset.path)} type="button">
+                  <ExternalLink size={13} />
+                  <span>Open</span>
+                </button>
+                <button className="icon-button" title="Close preview" onClick={() => setSelectedAsset(null)} type="button">
+                  <X size={16} />
+                </button>
+              </div>
+            </header>
+            <div className="imagine-lightbox-stage">
+              {selectedAsset.kind === 'image' ? (
+                <img src={assetUrl(selectedAsset.path)} alt="" />
+              ) : (
+                <video src={assetUrl(selectedAsset.path)} controls autoPlay />
+              )}
+            </div>
+            <footer className="imagine-lightbox-footer">
+              <span>{selectedAsset.mode.replace(/-/g, ' ')}</span>
+              <span>{formatBytes(selectedAsset.size)}</span>
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -48,7 +48,7 @@ API keys are stored in Electron user data through `safeStorage`. They are not st
 - Live preview server manager
 - Preview command override with auto-detect, static server, and common dev-server presets
 - Imagine media suite for xAI image generation, image editing, text-to-video, image-to-video, and reference-to-video workflows
-- Workspace asset gallery that immediately saves generated images/videos under `assets/imagine`
+- Workspace asset gallery that immediately saves generated images/videos under `assets/imagine` with large in-app preview playback
 - Imagine status stream for submitted, polling, downloading, saved, and error states
 - Chat attachments for local files, screenshots, audio, and documents
 - Browser speech dictation when Chromium speech recognition is available

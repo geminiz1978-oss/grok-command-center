@@ -2585,6 +2585,42 @@ button {
   background-size: 18px 18px;
 }
 
+.imagine-asset-preview-button {
+  position: relative;
+  width: 100%;
+  padding: 0;
+  cursor: zoom-in;
+  color: inherit;
+}
+
+.imagine-asset-preview-button:focus-visible {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px rgba(247, 211, 88, 0.42);
+  outline: none;
+}
+
+.imagine-preview-hint {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid rgba(247, 211, 88, 0.45);
+  background: rgba(0, 0, 0, 0.72);
+  color: var(--red);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.imagine-asset-preview-button:hover .imagine-preview-hint,
+.imagine-asset-preview-button:focus-visible .imagine-preview-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .imagine-asset-preview img,
 .imagine-asset-preview video {
   width: 100%;
@@ -2620,6 +2656,88 @@ button {
 .imagine-asset-actions {
   justify-content: space-between;
   gap: 6px;
+}
+
+.imagine-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.imagine-lightbox {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(1120px, calc(100vw - 64px));
+  max-height: calc(100vh - 64px);
+  min-height: 420px;
+  border: 1px solid rgba(247, 211, 88, 0.32);
+  background: #080908;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.58);
+}
+
+.imagine-lightbox-header,
+.imagine-lightbox-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.imagine-lightbox-footer {
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.imagine-lightbox-header h2 {
+  max-width: min(620px, 54vw);
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.imagine-lightbox-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.imagine-lightbox-stage {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  padding: 14px;
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%),
+    #020302;
+  background-size: 22px 22px;
+}
+
+.imagine-lightbox-stage img,
+.imagine-lightbox-stage video {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 190px);
+  object-fit: contain;
+}
+
+.imagine-lightbox-stage video {
+  width: min(100%, 1040px);
 }
 
 .spin-icon {
